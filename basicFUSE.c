@@ -12,11 +12,13 @@
  * 
 */
 #define FUSE_USE_VERSION 26
+#define _GNU_SOURCE
+#define _XOPEN_SOURCE 700
 
 #include "basicFUSE_lib.h"
 
 #include <stdlib.h>
-#include <fuse.h>
+#include <fuse/fuse.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>

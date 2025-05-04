@@ -18,6 +18,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <time.h>  // Required for struct timespec
 
 /***********************************
  * macros y estructura
@@ -33,9 +34,9 @@ struct structura_mis_datos
 	int numero_ficheros;     				/* número de capitulos encontrados */
 	char *nombre_ficheros[MAX_FICHEROS];	/* nombre de los capítulos */
 	char *contenido_ficheros[MAX_FICHEROS];	/* contenido de los capítulos */
-	struct timespec st_atim;  				/* fechas del fichero */
-    struct timespec st_mtim; 
-    struct timespec st_ctim;  
+	struct timespec st_atime;  				/* fechas del fichero */
+    struct timespec st_mtime; 
+    struct timespec st_ctime;  
     uid_t     st_uid;        				/* El usuario y grupo */
     gid_t     st_gid;  
     
