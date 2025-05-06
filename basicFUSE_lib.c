@@ -77,12 +77,9 @@ void leer_fichero(struct structura_mis_datos *mis_datos)
 	fstat(fileno(f), &fileStat);
 	mis_datos->st_uid= fileStat.st_uid;
 	mis_datos->st_gid= fileStat.st_gid;
-	mis_datos->st_atime.tv_sec = fileStat.st_atime;
-	mis_datos->st_atime.tv_nsec = 0;
-	mis_datos->st_ctime.tv_sec = fileStat.st_ctime;
-	mis_datos->st_ctime.tv_nsec = 0;
-	mis_datos->st_mtime.tv_sec = fileStat.st_mtime;
-	mis_datos->st_mtime.tv_nsec = 0;
+	mis_datos->st_atime = fileStat.st_atime;
+	mis_datos->st_ctime = fileStat.st_ctime;
+	mis_datos->st_mtime = fileStat.st_mtime;
 		      
 	fclose(f);
 }
