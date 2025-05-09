@@ -44,91 +44,46 @@ static int mi_getattr(const char *path, struct stat *stbuf)
         // Directorio raíz, BIG o little
         stbuf->st_mode  = S_IFDIR | 0755;
         stbuf->st_nlink = 2;
-        /*stbuf->st_uid   = mis_datos->st_uid;
+        stbuf->st_uid   = mis_datos->st_uid;
         stbuf->st_gid   = mis_datos->st_gid;
         stbuf->st_atime  = mis_datos->st_atime;
         stbuf->st_mtime  = mis_datos->st_mtime;
-        stbuf->st_ctime  = mis_datos->st_ctime;*/
-        stbuf->st_size  = 4096/*1024*/;
+        stbuf->st_ctime  = mis_datos->st_ctime;
+        stbuf->st_size  = 4096; // Tamaño del directorio
         stbuf->st_blocks= 2;
 
-	 } else if ((i= buscar_fichero(path, mis_datos)) >= 0) {
-		stbuf->st_mode = S_IFREG | 0444;
-		stbuf->st_nlink = 1;
-		
-		stbuf->st_size = strlen(mis_datos->contenido_ficheros[i]);
-		stbuf->st_blocks = stbuf->st_size/512 + (stbuf->st_size%512)? 1 : 0;
-	} else
-		res = -ENOENT;
-
-	stbuf->st_uid = mis_datos->st_uid;
-	stbuf->st_gid = mis_datos->st_gid;
-	
-	stbuf->st_atime = mis_datos->st_atime;
-	stbuf->st_mtime = mis_datos->st_mtime;
-	stbuf->st_ctime = mis_datos->st_ctime;
+	} else {
+        if(strncmp(path, "/BIG/", 5) == 0 || strncmp(path, "/little/", 8) == 0) {
+            // Ruta dentro de BIG o little
+            char new_path[256];
+			const char *nombre = (strncmp(path, "/BIG/", 5) == 0) ? path + 5 : path + 8;
+            snprintf(new_path, sizeof(new_path), "/%s", nombre);
+            i = buscar_fichero(new_path, mis_datos);
+            if(i < 0 || (strncmp(path, "/BIG/", 5) == 0 && strlen(mis_datos->contenido_ficheros[i]) <= UMBRAL) ||
+               (strncmp(path, "/little/", 8) == 0 && strlen(mis_datos->contenido_ficheros[i]) > UMBRAL))
+                res = -ENOENT;
+        }else{
+            // Fichero en raíz
+            i = buscar_fichero(path, mis_datos);
+            if(i < 0)
+                res = -ENOENT;
+        }
+        if(i >= 0){
+            stbuf->st_mode  = S_IFREG | 0444;
+            stbuf->st_nlink = 1;
+            stbuf->st_uid   = mis_datos->st_uid;
+            stbuf->st_gid   = mis_datos->st_gid;
+            stbuf->st_atime  = mis_datos->st_atime;
+            stbuf->st_mtime  = mis_datos->st_mtime;
+            stbuf->st_ctime  = mis_datos->st_ctime;
+            stbuf->st_size  = strlen(mis_datos->contenido_ficheros[i]);
+            stbuf->st_blocks= (stbuf->st_size / 512) + (stbuf->st_size % 512 ? 1 : 0);
+        } else {
+            res = -ENOENT;
+        }
+    }
 
     return res;
-	/*
-	
-	int i;
-	
-	int res = 0;
-
-	memset(stbuf, 0, sizeof(struct stat));
-	if (strcmp(path, "/") == 0 || strcmp(path, "/BIG") == 0 || strcmp(path, "/little") == 0) {
-		stbuf->st_mode = S_IFDIR | 0755;
-		stbuf->st_nlink = 2;
-		stbuf->st_uid = mis_datos->st_uid;
-		stbuf->st_gid = mis_datos->st_gid;
-		
-		stbuf->st_atime = mis_datos->st_atime;
-		stbuf->st_mtime = mis_datos->st_mtime;
-		stbuf->st_ctime = mis_datos->st_ctime;
-		stbuf->st_size = 1024;
-		stbuf->st_blocks = 2;
-	
-	} else if (strncmp(path, "/BIG/", 5) == 0 || strncmp(path, "/little/", 8) == 0) {
-		// Ruta dentro de BIG o little
-		const char *nombre = strchr(path + 1, '/') + 1;
-		i = buscar_fichero(nombre, mis_datos);
-		
-		if (i < 0)
-			res = -ENOENT;
-		else if ((strncmp(path, "/BIG/", 5) == 0 && strlen(mis_datos->contenido_ficheros[i]) <= UMBRAL) ||
-		         (strncmp(path, "/little/", 8) == 0 && strlen(mis_datos->contenido_ficheros[i]) > UMBRAL))
-			res = -ENOENT;
-		
-		stbuf->st_mode = S_IFREG | 0444;
-		stbuf->st_nlink = 1;
-		
-		stbuf->st_uid = mis_datos->st_uid;
-		stbuf->st_gid = mis_datos->st_gid;
-		
-		stbuf->st_atime = mis_datos->st_atime;
-		stbuf->st_mtime = mis_datos->st_mtime;
-		stbuf->st_ctime = mis_datos->st_ctime;
-		
-		stbuf->st_size = strlen(mis_datos->contenido_ficheros[i]);
-		stbuf->st_blocks = stbuf->st_size/512 + (stbuf->st_size%512)? 1 : 0;
-
-	} else if ((i= buscar_fichero(path, mis_datos)) >= 0) {
-		stbuf->st_mode = S_IFREG | 0444;
-		stbuf->st_nlink = 1;
-		
-		stbuf->st_uid = mis_datos->st_uid;
-		stbuf->st_gid = mis_datos->st_gid;
-		
-		stbuf->st_atime = mis_datos->st_atime;
-		stbuf->st_mtime = mis_datos->st_mtime;
-		stbuf->st_ctime = mis_datos->st_ctime;
-		
-		stbuf->st_size = strlen(mis_datos->contenido_ficheros[i]);
-		stbuf->st_blocks = stbuf->st_size/512 + (stbuf->st_size%512)? 1 : 0;
-	} else
-		res = -ENOENT;
-
-	return res;*/
 }
 
 /***********************************
@@ -145,10 +100,9 @@ static int mi_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	//(void) offset;
 	//(void) fi;
 
-	filler(buf, ".", NULL, 0);
-	filler(buf, "..", NULL, 0);
-
 	if(strcmp(path, "/") == 0){
+        filler(buf, ".", NULL, 0);
+	    filler(buf, "..", NULL, 0);
 		filler(buf, "BIG", NULL, 0);
 		filler(buf, "little", NULL, 0);
 		
@@ -159,6 +113,8 @@ static int mi_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		}
 		
 	} else if(strcmp(path, "/BIG") == 0) {
+        filler(buf, ".", NULL, 0);
+	    filler(buf, "..", NULL, 0);
 		for (i=0; i< mis_datos->numero_ficheros; i++)
 		{
 			if (strlen(mis_datos->contenido_ficheros[i]) > UMBRAL)
@@ -167,6 +123,8 @@ static int mi_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		}
 		
 	} else if(strcmp(path, "/little") == 0) {
+        filler(buf, ".", NULL, 0);
+	    filler(buf, "..", NULL, 0);
 		for (i=0; i< mis_datos->numero_ficheros; i++)
 		{
 			if (strlen(mis_datos->contenido_ficheros[i]) <= UMBRAL)
