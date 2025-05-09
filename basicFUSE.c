@@ -97,8 +97,8 @@ static int mi_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	/* completar */
 	int i;
 	
-	//(void) offset;
-	//(void) fi;
+	(void) offset;
+	(void) fi;
 
 	if(strcmp(path, "/") == 0){
         filler(buf, ".", NULL, 0);
@@ -146,39 +146,21 @@ static int mi_open(const char *path, struct fuse_file_info *fi)
 {
 	struct structura_mis_datos *mis_datos= (struct structura_mis_datos *) fuse_get_context()->private_data;
 
-	/*/*const char *nombre_fichero = strchr(path, '/');
-	if (nombre_fichero == NULL)
-		return -ENOENT;
-	int i = buscar_fichero(path, mis_datos);
-
-	if(i == -1)
-		return -ENOENT;
-	
-	fi->flags |= O_RDONLY;
-	fi->fh = i;guardamos el índice del fichero en el handle*/
-
 	int i = buscar_fichero(path, mis_datos);
 
 	if(i < 0){
 		char new_path[256];
-
-		if (strncmp(path, "/BIG/", 5) == 0) {
-			snprintf(new_path, sizeof(new_path), "%s", path + 5);
-			if(i < 0 || strlen(mis_datos->contenido_ficheros[i]) <= UMBRAL)
-				return -ENOENT;
-		} else if (strncmp(path, "/little/", 8) == 0) {
-			snprintf(new_path, sizeof(new_path), "%s", path + 8);
-			if(i < 0 || strlen(mis_datos->contenido_ficheros[i]) > UMBRAL)
-				return -ENOENT;
-		} else
-			return -ENOENT;
-		
-		i = buscar_fichero(new_path, mis_datos);
-		if (i < 0)
-			return -ENOENT;
+		const char *nombre = (strncmp(path, "/BIG/", 5) == 0) ? path + 5 : path + 8;
+        snprintf(new_path, sizeof(new_path), "/%s", nombre);
+        i = buscar_fichero(new_path, mis_datos);
+        if(i < 0 || (strncmp(path, "/BIG/", 5) == 0 && strlen(mis_datos->contenido_ficheros[i]) <= UMBRAL) ||
+           (strncmp(path, "/little/", 8) == 0 && strlen(mis_datos->contenido_ficheros[i]) > UMBRAL))
+            return -ENOENT;
 	}
 
-	fi->flags |= O_RDONLY; // Set the file handle to read-only
+    if ((fi->flags & O_ACCMODE) != O_RDONLY)
+        return -EACCES;
+
 	fi->fh = i; // Save the file index in the handle
 
 	return 0;
